@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'myapp',  # Our app
 ]
-
+AUTH_USER_MODEL = 'myapp.User'
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -71,6 +71,7 @@ REST_FRAMEWORK = {
 }
 
 ROOT_URLCONF = 'project.urls'
+
 
 TEMPLATES = [
     {

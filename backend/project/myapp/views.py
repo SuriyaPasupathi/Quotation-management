@@ -1,44 +1,23 @@
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-import json
-from .models import User
+from rest_framework import viewsets, permissions
+from .models import User, Supplier, Product, SupplierProduct
+from .serializers import UserSerializer, SupplierSerializer, ProductSerializer, SupplierProductSerializer
 
-@csrf_exempt
-def register_user(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        username = data.get('username')
-        email = data.get('email')
-        password = data.get('password')
-        role = data.get('role', 'user')
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-        if User.objects.filter(username=username).exists():
-            return JsonResponse({'error': 'Username already exists'}, status=400)
+class SupplierViewSet(viewsets.ModelViewSet):
+    queryset = Supplier.objects.all()
+    serializer_class = SupplierSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-        user = User.objects.create_user(username=username, email=email, password=password, role=role)
-        return JsonResponse({'message': 'User registered successfully'})
+class ProductViewSet(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-@csrf_exempt
-def login_user(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        username = data.get('username')
-        password = data.get('password')
-
-        user = authenticate(username=username, password=password)
-        if user:
-            login(request, user)
-            return JsonResponse({'message': 'Login successful', 'role': user.role})
-        return JsonResponse({'error': 'Invalid credentials'}, status=400)
-
-@login_required
-def dashboard(request):
-    user = request.user
-    return JsonResponse({'message': f'Welcome to the {user.role} dashboard', 'role': user.role})
-
-@csrf_exempt
-def logout_user(request):
-    logout(request)
-    return JsonResponse({'message': 'Logged out successfully'})
+class SupplierProductViewSet(viewsets.ModelViewSet):
+    queryset = SupplierProduct.objects.all()
+    serializer_class = SupplierProductSerializer
+    permission_classes = [permissions.IsAuthenticated]

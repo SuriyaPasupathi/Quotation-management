@@ -1,15 +1,7 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from .models import User
+from .models import User, Supplier, Product, SupplierProduct
 
-class CustomUserAdmin(UserAdmin):
-    model = User
-    list_display = ('username', 'email', 'role', 'is_active', 'is_staff')
-    fieldsets = UserAdmin.fieldsets + (
-        ('Role', {'fields': ('role',)}),
-    )
-    add_fieldsets = UserAdmin.add_fieldsets + (
-        ('Role', {'fields': ('role',)}),
-    )
-
-admin.site.register(User, CustomUserAdmin)
+admin.site.register(User)
+admin.site.register(Supplier)
+admin.site.register(Product)
+admin.site.register(SupplierProduct)
