@@ -1,31 +1,102 @@
-import { useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-export default function Login() {
-  const [form, setForm] = useState({ username: "", password: "" });
-  const navigate = useNavigate();
+const Login = () => {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+    const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await axios.post("http://127.0.0.1:8000/login/", form);
-      localStorage.setItem("role", response.data.role);
-      navigate("/dashboard");
-    } catch (error) {
-      alert("Invalid credentials");
-    }
-  };
+    const navigate = useNavigate();
 
-  return (
-    <div className="flex justify-center items-center h-screen bg-gray-200">
-      <form onSubmit={handleLogin} className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">Login</h2>
-        <input type="text" placeholder="Username" className="w-full p-3 mb-3 border rounded-lg focus:ring focus:ring-blue-300" onChange={(e) => setForm({ ...form, username: e.target.value })} />
-        <input type="password" placeholder="Password" className="w-full p-3 mb-4 border rounded-lg focus:ring focus:ring-blue-300" onChange={(e) => setForm({ ...form, password: e.target.value })} />
-        <button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg">Login</button>
-        <p className="mt-4 text-center text-sm">Don't have an account? <a href="/" className="text-blue-600">Register</a></p>
-      </form>
-    </div>
-  );
-}
+    const handleLogin = async (event) => {
+        event.preventDefault();
+        setLoading(true);
+        setErrorMessage('');
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/login/', {  // Ensure this URL matches your backend URL
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.access_token) {
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('refresh_token', data.refresh_token);
+
+                switch (data.role) {
+                    case 'Admin':
+                        navigate('/AdminDashboard');
+                        break;
+                    case 'Teacher':
+                        navigate('/TeacherDashboard');
+                        break;
+                    case 'Student':
+                        navigate('/StudentDashboard');
+                        break;
+                    default:
+                        setErrorMessage('Invalid user role.');
+                }
+            } else {
+                setErrorMessage(data.message || 'Invalid credentials. Please try again.');
+            }
+        } catch (error) {
+            setErrorMessage('Something went wrong. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+            <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-xl border border-gray-200">
+                <h2 className="text-2xl font-bold text-center text-gray-700 mb-6">Login</h2>
+                
+                <form onSubmit={handleLogin} className="space-y-6">
+                    <div>
+                        <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
+                        <input
+                            type="text"
+                            id="username"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="mt-1 block w-full p-3 border border-gray-300 rounded-lg"
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="mt-1 block w-full p-3 border border-gray-300 rounded-lg"
+                            required
+                        />
+                    </div>
+
+                    {errorMessage && (
+                        <p className="text-red-500 text-center text-sm">{errorMessage}</p>
+                    )}
+
+                    <div>
+                        <button
+                            type="submit"
+                            className="w-full p-3 text-white bg-blue-600 rounded-lg"
+                            disabled={loading}
+                        >
+                            {loading ? 'Logging in...' : 'Login'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+export default Login;

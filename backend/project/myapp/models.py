@@ -3,23 +3,14 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 
 # Custom User Model
 class User(AbstractUser):
-    ROLES = (
+    ROLE_CHOICES = (
         ('admin', 'Admin'),
         ('user', 'User'),
     )
-    role = models.CharField(max_length=10, choices=ROLES, default='user')
-    
-    groups = models.ManyToManyField(
-        Group,
-        related_name='custom_user_groups',  # Avoid conflict with auth.User.groups
-        blank=True,
-    )
-    
-    user_permissions = models.ManyToManyField(
-        Permission,
-        related_name='custom_user_permissions',  # Avoid conflict with auth.User.user_permissions
-        blank=True,
-    )
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
+
+    def _str_(self):
+        return self.username
 
 class Supplier(models.Model):
     name = models.CharField(max_length=255)
