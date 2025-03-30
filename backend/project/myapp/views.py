@@ -56,12 +56,19 @@ def login_view(request):
 
 
 
-class DashboardView(APIView):
+class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        if request.user.role == 'admin':
-            return Response({"message": "Welcome to Admin Dashboard"})
-        elif request.user.role == 'user':
-            return Response({"message": "Welcome to User Dashboard"})
-        return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
+    def post(self, request):
+        refresh_token = request.data.get("refresh_token")
+        
+        if not refresh_token:
+            return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()  # This line will now work properly
+
+            return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

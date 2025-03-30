@@ -13,33 +13,23 @@ const Login = () => {
         event.preventDefault();
         setLoading(true);
         setErrorMessage('');
-
+    
         try {
             const response = await fetch('http://127.0.0.1:8000/login/', {  // Ensure this URL matches your backend URL
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
             });
-
+    
             const data = await response.json();
-
+    
             if (response.ok && data.access_token) {
                 localStorage.setItem('access_token', data.access_token);
                 localStorage.setItem('refresh_token', data.refresh_token);
-
-                switch (data.role) {
-                    case 'Admin':
-                        navigate('/AdminDashboard');
-                        break;
-                    case 'Teacher':
-                        navigate('/TeacherDashboard');
-                        break;
-                    case 'Student':
-                        navigate('/StudentDashboard');
-                        break;
-                    default:
-                        setErrorMessage('Invalid user role.');
-                }
+                localStorage.setItem('role', data.role);  // Save role if needed
+    
+                // Navigate to Dashboard
+                navigate('/Dashboard');  // Just use '/dashboard' for the general dashboard page
             } else {
                 setErrorMessage(data.message || 'Invalid credentials. Please try again.');
             }
