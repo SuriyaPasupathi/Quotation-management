@@ -10,10 +10,19 @@ class CustomUserAdmin(UserAdmin):
     )
 
 
+# Inline Model to show SupplierProduct details under Supplier
+class SupplierProductInline(admin.TabularInline):
+    model = SupplierProduct
+    extra = 0  # Don't show extra blank rows
+    fields = ['product', 'cost', 'quantity']
+    readonly_fields = ['product', 'cost', 'quantity']
+    can_delete = False  # Prevent deletion from this view
+
 @admin.register(Supplier)
 class SupplierAdmin(admin.ModelAdmin):
     list_display = ['name', 'contact_info']
     search_fields = ['name']
+    inlines = [SupplierProductInline]  # Show products as an inline table under Supplier detail page
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
@@ -22,8 +31,9 @@ class ProductAdmin(admin.ModelAdmin):
 
 @admin.register(SupplierProduct)
 class SupplierProductAdmin(admin.ModelAdmin):
-    list_display = ['supplier', 'product', 'cost', 'quantity']  # Displaying the quantity field
+    list_display = ['supplier', 'product', 'cost', 'quantity']
     list_filter = ['supplier']
     search_fields = ['supplier__name', 'product__name']
+    
 
 admin.site.register(User,CustomUserAdmin)
