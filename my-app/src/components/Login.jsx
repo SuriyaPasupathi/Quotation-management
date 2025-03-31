@@ -13,23 +13,21 @@ const Login = () => {
         event.preventDefault();
         setLoading(true);
         setErrorMessage('');
-    
+
         try {
-            const response = await fetch('http://127.0.0.1:8000/login/', {  // Ensure this URL matches your backend URL
+            const response = await fetch('http://127.0.0.1:8000/login/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password }),
             });
-    
+
             const data = await response.json();
-    
+
             if (response.ok && data.access_token) {
                 localStorage.setItem('access_token', data.access_token);
                 localStorage.setItem('refresh_token', data.refresh_token);
-                localStorage.setItem('role', data.role);  // Save role if needed
-    
-                // Navigate to Dashboard
-                navigate('/Dashboard');  // Just use '/dashboard' for the general dashboard page
+                localStorage.setItem('role', data.role);
+                navigate('/Dashboard');
             } else {
                 setErrorMessage(data.message || 'Invalid credentials. Please try again.');
             }
@@ -41,49 +39,52 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-xl border border-gray-200">
-                <h2 className="text-2xl font-bold text-center text-gray-700 mb-6">Login</h2>
-                
-                <form onSubmit={handleLogin} className="space-y-6">
-                    <div>
-                        <label htmlFor="username" className="block text-sm font-medium text-gray-700">Username</label>
+        <div className="min-h-screen flex items-center justify-center bg-gray-200">
+            <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-xl border border-gray-300">
+                <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">
+                    Login to Your Account
+                </h2>
+                <form onSubmit={handleLogin}>
+                    <div className="mb-6">
+                        <label htmlFor="username" className="block text-lg text-gray-600">
+                            Username
+                        </label>
                         <input
                             type="text"
                             id="username"
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
-                            className="mt-1 block w-full p-3 border border-gray-300 rounded-lg"
+                            className="w-full p-4 mt-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter your username"
                             required
                         />
                     </div>
-
-                    <div>
-                        <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
+                    <div className="mb-6">
+                        <label htmlFor="password" className="block text-lg text-gray-600">
+                            Password
+                        </label>
                         <input
                             type="password"
                             id="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="mt-1 block w-full p-3 border border-gray-300 rounded-lg"
+                            className="w-full p-4 mt-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter your password"
                             required
                         />
                     </div>
-
                     {errorMessage && (
-                        <p className="text-red-500 text-center text-sm">{errorMessage}</p>
+                        <p className="text-red-500 text-sm mb-4 text-center">{errorMessage}</p>
                     )}
-
-                    <div>
-                        <button
-                            type="submit"
-                            className="w-full p-3 text-white bg-blue-600 rounded-lg"
-                            disabled={loading}
-                        >
-                            {loading ? 'Logging in...' : 'Login'}
-                        </button>
-                    </div>
+                    <button
+                        type="submit"
+                        className="w-full p-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none transition duration-200"
+                        disabled={loading}
+                    >
+                        {loading ? 'Logging in...' : 'Login'}
+                    </button>
                 </form>
+               
             </div>
         </div>
     );

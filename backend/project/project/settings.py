@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'myapp',  # Our app
+    'import_export',
 ]
 AUTH_USER_MODEL = 'myapp.User'
 MIDDLEWARE = [

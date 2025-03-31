@@ -1,9 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import BulkUpload from '../components/Bulkupload';  // Make sure you have imported your BulkUpload component
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [message, setMessage] = useState('');
 
   const handleLogout = async () => {
     try {
@@ -30,9 +32,7 @@ export default function Dashboard() {
     } catch (error) {
         console.error('Error during logout:', error.response?.data || error.message);
     }
-};
-
-
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
@@ -41,6 +41,14 @@ export default function Dashboard() {
         <p className="text-lg text-center text-gray-600 mb-6">
           Welcome to the Dashboard! You have successfully logged in.
         </p>
+
+        {/* Bulk Upload Component */}
+        <div className="mb-6">
+          <BulkUpload setMessage={setMessage} />
+          {message && <div style={{ marginTop: '1rem', color: 'blue', textAlign: 'center' }}>{message}</div>}
+        </div>
+
+        {/* Logout Button */}
         <div className="flex justify-center">
           <button
             onClick={handleLogout}

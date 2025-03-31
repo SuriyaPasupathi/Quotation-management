@@ -4,23 +4,13 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate, get_user_model
-from .models import User
-from .serializers import UserSerializer
 from rest_framework.decorators import api_view,permission_classes
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.permissions import AllowAny
-
-class RegisterView(APIView):
-    def post(self, request):
-        data = request.data
-        user = User.objects.create_user(
-            username=data['username'],
-            password=data['password'],
-            email=data['email'],
-            role=data.get('role', 'user')
-        )
-        serializer = UserSerializer(user)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+from django.http import JsonResponse
+import pandas as pd
+from .models import Product
+import csv
 
 
 User = get_user_model()
@@ -55,6 +45,34 @@ def login_view(request):
     return Response({'message': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+
+@csrf_exempt
+def upload_products(request):
+    if request.method == 'POST' :
+        file = request.FILES['file']
+        
+        try:
+            if file.name.endswith('.csv'):
+                data = pd.read_csv(file)
+            elif file.name.endswith('.xlsx'):
+                data = pd.read_excel(io.BytesIO(file.read()))  # Use io.BytesIO for Excel files
+            else:
+                return JsonResponse({'error': 'Unsupported file type'}, status=400)
+            
+            if 'name' not in data.columns or 'description' not in data.columns:
+                return JsonResponse({'error': 'The uploaded file must contain "name" and "description" columns'}, status=400)
+            
+            for _, row in data.iterrows():
+                Product.objects.create(
+                    name=row['name'],
+                    description=row['description']
+                )
+            return JsonResponse({'message': 'Products uploaded successfully!'}, status=200)
+        
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+        
+    return JsonResponse({'error': 'Invalid request, no file found.'}, status=400)
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
