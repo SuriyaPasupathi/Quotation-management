@@ -33,4 +33,4 @@ class SupplierProductSerializer(serializers.ModelSerializer):
 class EnquirySerializer(serializers.ModelSerializer):
     class Meta:
         model = Enquiry
-        fields = ['id', 'user_name', 'products','quantity', 'status']
+        fields = '__all__'

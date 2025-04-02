@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.contrib.auth import get_user_model
 
 # Custom User Model
 class User(AbstractUser):
@@ -41,17 +42,13 @@ class SupplierProduct(models.Model):
 
     @property
     def inventory_level(self):
-        if self.quantity == 0:
-            return "Out of Stock"
-        elif self.quantity <= 20:
-            return "Low"
-        elif self.quantity <= 70:
-            return "Medium"
-        else:
-            return "High"
+        return "Available" if self.quantity > 0 else "Not Available"
 
     def __str__(self):
         return f"{self.supplier.supplier_name} - {self.product.product_name}"
+
+
+User = get_user_model()
 
 class Enquiry(models.Model):
     STATUS_CHOICES = (
@@ -60,13 +57,13 @@ class Enquiry(models.Model):
         ('Rejected', 'Rejected'),
     )
 
-    user_name = models.CharField(max_length=255)
-    products = models.JSONField()  # Storing products as a list of dictionaries
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='enquiries')
+    product = models.CharField(max_length=255)
     quantity = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Pending')
    
     def __str__(self):
-        return self.user_name
+        return str(self.user)  # This will display the user in the admin panel (default representation)
 
 
 # Inventory Model

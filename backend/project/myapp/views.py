@@ -9,6 +9,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 import pandas as pd
 from .models import Product, Supplier,Enquiry
 from .serializers import EnquirySerializer
+from rest_framework import viewsets, permissions
 
 
 
@@ -86,10 +87,11 @@ def enquiry_list(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
 def enquiry_create(request):
     serializer = EnquirySerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
+        serializer.save(user=request.user)  # Associates the enquiry with the authenticated user
         return Response({'message': 'Enquiry submitted successfully!'}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -103,7 +105,6 @@ def approve_enquiry(request, pk):
     enquiry.status = 'Approved'
     enquiry.save()
     return Response({'message': 'Enquiry approved successfully!'})
-
 
 
 

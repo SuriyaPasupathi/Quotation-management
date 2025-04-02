@@ -44,16 +44,21 @@ class SupplierAdmin(admin.ModelAdmin):
     readonly_fields = ['supplier_id']
     inlines = [SupplierProductInline] 
 
-class EnquiryAdmin(admin.ModelAdmin):
-    list_display = ('user_name', 'status','quantity')  # Show the username and status in the admin list view
-    list_filter = ('status',)
-    search_fields = ('user_name','quantity')
-    readonly_fields = ('user_name', 'products','quantity')  # Making the entire products field read-only
-    fields = ('user_name', 'products', 'status','quantity')  # Display all fields in the admin form
 
-    # Display products with their quantities directly in the list view (Optional)
+@admin.register(Enquiry)
+class EnquiryAdmin(admin.ModelAdmin):
+    list_display = ('user', 'product', 'quantity', 'status')
+    list_filter = ('status', 'user')
+    search_fields = ('user', 'product')
+    readonly_fields = ('user', 'product', 'quantity')
+    fields = ('user', 'product', 'quantity', 'status')
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj:
+            return ('user', 'product', 'quantity')
+        return self.readonly_fields
    
 
-admin.site.register(Enquiry, EnquiryAdmin)
+
 
 admin.site.register(User,CustomUserAdmin)
