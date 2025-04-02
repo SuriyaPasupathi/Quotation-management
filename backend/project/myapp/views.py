@@ -1,16 +1,15 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate, get_user_model
-from rest_framework.decorators import api_view,permission_classes
-from django.views.decorators.csrf import csrf_exempt
-from rest_framework.permissions import AllowAny
-from django.http import JsonResponse
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.parsers import MultiPartParser, FormParser
 import pandas as pd
-from .models import Product
-import csv
+from .models import Product, Supplier,Enquiry
+from .serializers import EnquirySerializer
+
 
 
 User = get_user_model()
@@ -45,34 +44,69 @@ def login_view(request):
     return Response({'message': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+# ✅ Upload Products View
+class BulkUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
-@csrf_exempt
-def upload_products(request):
-    if request.method == 'POST' :
-        file = request.FILES['file']
-        
+    def post(self, request):
+        file = request.FILES.get('file')
+        if not file:
+            return Response({"error": "No file uploaded"}, status=400)
+
         try:
-            if file.name.endswith('.csv'):
-                data = pd.read_csv(file)
-            elif file.name.endswith('.xlsx'):
-                data = pd.read_excel(io.BytesIO(file.read()))  # Use io.BytesIO for Excel files
-            else:
-                return JsonResponse({'error': 'Unsupported file type'}, status=400)
+            df = pd.read_excel(file) if file.name.endswith('.xlsx') else pd.read_csv(file)
             
-            if 'name' not in data.columns or 'description' not in data.columns:
-                return JsonResponse({'error': 'The uploaded file must contain "name" and "description" columns'}, status=400)
-            
-            for _, row in data.iterrows():
-                Product.objects.create(
-                    name=row['name'],
-                    description=row['description']
+            # Debug: Print column names to check if they're correct
+            print(df.columns) 
+            df.columns = df.columns.str.strip()  # Remove spaces from column names
+
+            for _, row in df.iterrows():
+                supplier_name = row.get('Supplier')  # Use .get() to avoid KeyError
+                if not supplier_name:
+                    return Response({"error": "Column 'Supplier' not found or is empty"}, status=400)
+                
+                supplier, _ = Supplier.objects.get_or_create(name=supplier_name)
+                
+                Product.objects.update_or_create(
+                    name=row['Product'],
+                    supplier=supplier,
+                    defaults={'price': row['Price'], 'quantity': row['Quantity']}
                 )
-            return JsonResponse({'message': 'Products uploaded successfully!'}, status=200)
-        
+            return Response({"message": "Products uploaded successfully"})
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
-        
-    return JsonResponse({'error': 'Invalid request, no file found.'}, status=400)
+            return Response({"error": str(e)}, status=400)
+
+
+
+@api_view(['GET'])
+def enquiry_list(request):
+    enquiries = Enquiry.objects.all()
+    serializer = EnquirySerializer(enquiries, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+def enquiry_create(request):
+    serializer = EnquirySerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({'message': 'Enquiry submitted successfully!'}, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PATCH'])
+def approve_enquiry(request, pk):
+    try:
+        enquiry = Enquiry.objects.get(pk=pk)
+    except Enquiry.DoesNotExist:
+        return Response({'error': 'Enquiry not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    enquiry.status = 'Approved'
+    enquiry.save()
+    return Response({'message': 'Enquiry approved successfully!'})
+
+
+
+
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]

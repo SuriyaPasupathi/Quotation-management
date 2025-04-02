@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Supplier, Product, SupplierProduct
+from .models import User, Supplier, Product, SupplierProduct,Enquiry
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -28,3 +28,9 @@ class SupplierProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = SupplierProduct
         fields = '__all__'
+
+
+class EnquirySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Enquiry
+        fields = ['id', 'user_name', 'products','quantity', 'status']

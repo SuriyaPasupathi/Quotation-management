@@ -11,22 +11,23 @@ const BulkUpload = () => {
 
     const handleUpload = async (e) => {
         e.preventDefault();
-    
+
         if (!file) {
             setMessage('Please select a file to upload.');
             return;
         }
-    
+
         const formData = new FormData();
         formData.append('file', file);
-    
+
         try {
             const response = await axios.post('http://127.0.0.1:8000/upload-products/', formData, {
-                headers: {  // DO NOT set 'Content-Type' header manually here
-                    'Accept': 'application/json',
-                },
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': 'Bearer ' + localStorage.getItem('access_token')  // Adjust if you are using JWT authentication
+                }
             });
-    
+
             if (response.status === 200) {
                 setMessage('Products uploaded successfully!');
             } else {
@@ -35,7 +36,6 @@ const BulkUpload = () => {
         } catch (error) {
             setMessage('An error occurred during upload.');
         }
-
     };
 
     return (

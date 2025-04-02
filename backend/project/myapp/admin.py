@@ -1,12 +1,8 @@
 from django.contrib import admin
-from .models import User, Supplier, Product, SupplierProduct
+from .models import User, Supplier, Product, SupplierProduct,Enquiry
 from django.contrib.auth.admin import UserAdmin
-from django.http import HttpResponse
-from django.shortcuts import render, redirect
 from django import forms
-import csv
-import pandas as pd
-from io import TextIOWrapper, BytesIO
+
 
 class CustomUserAdmin(UserAdmin):
     model = User
@@ -14,68 +10,50 @@ class CustomUserAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         (None, {'fields': ('role',)}),
     )
-class ProductUploadForm(forms.Form):
-    file = forms.FileField()
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ['product_id', 'name']
-    search_fields = ['name']
+    list_display = ['product_id', 'product_name']
+    search_fields = ['product_name']
     actions = ['upload_products']
 
-    def upload_products(self, request, queryset):
-        if request.method == 'POST':
-            form = ProductUploadForm(request.POST, request.FILES)
-            if form.is_valid():
-                file = request.FILES['file']
-                try:
-                    # Handling CSV files
-                    if file.name.endswith('.csv'):
-                        data = TextIOWrapper(file.file, encoding='utf-8')
-                        csv_data = csv.reader(data)
-                        next(csv_data)  # Skip header row
-                        for row in csv_data:
-                            Product.objects.create(
-                                name=row[0],
-                                description=row[1]
-                            )
-                    
-                    # Handling Excel files
-                    elif file.name.endswith('.xlsx'):
-                        df = pd.read_excel(file)
-                        for index, row in df.iterrows():
-                            Product.objects.create(
-                                name=row['name'],
-                                description=row['description']
-                            )
 
-                    self.message_user(request, "Products successfully uploaded.")
-                    return redirect('..')
-                except Exception as e:
-                    self.message_user(request, f"Error uploading file: {e}")
-        
-        form = ProductUploadForm()
-        context = {'form': form}
-        return render(request, 'admin/upload_products.html', context)
 
-    upload_products.short_description = "Bulk Upload Products (CSV/Excel)"
-    
-@admin.register(SupplierProduct)
-class SupplierProductAdmin(admin.ModelAdmin):
-    list_display = ['supplier', 'product', 'cost', 'inventory_level']  # Displaying inventory_level here
-    list_filter = ['supplier']
-    search_fields = ['supplier__name', 'product__name']
+
+
 class SupplierProductInline(admin.TabularInline):
     model = SupplierProduct
     extra = 0
-    fields = ['product_id','product',  'cost', 'inventory_level']  # Added 'product_id' here
-    readonly_fields = ['product_id','product',  'cost', 'inventory_level']  # Made 'product_id' read-only
+    fields = ['product_id','product', 'cost', 'quantity', 'inventory_level']
+    readonly_fields = ['product_id','product', 'cost', 'quantity', 'inventory_level','inventory_level']
     can_delete = False
+
+@admin.register(SupplierProduct)
+class SupplierProductAdmin(admin.ModelAdmin):
+    list_display = ['supplier', 'product', 'cost', 'quantity', 'inventory_level']
+    list_filter = ['supplier']
+    search_fields = ['supplier__supplier_name', 'product__product_name']
+    readonly_fields = ['inventory_level']
+  
+
+
 @admin.register(Supplier)
 class SupplierAdmin(admin.ModelAdmin):
-    list_display = ['name', 'contact_info']
-    search_fields = ['name']
-    inlines = [SupplierProductInline]
-    
+    list_display = ['supplier_id', 'supplier_name', 'contact_info']
+    search_fields = ['supplier_name']
+    readonly_fields = ['supplier_id']
+    inlines = [SupplierProductInline] 
+
+class EnquiryAdmin(admin.ModelAdmin):
+    list_display = ('user_name', 'status','quantity')  # Show the username and status in the admin list view
+    list_filter = ('status',)
+    search_fields = ('user_name','quantity')
+    readonly_fields = ('user_name', 'products','quantity')  # Making the entire products field read-only
+    fields = ('user_name', 'products', 'status','quantity')  # Display all fields in the admin form
+
+    # Display products with their quantities directly in the list view (Optional)
+   
+
+admin.site.register(Enquiry, EnquiryAdmin)
 
 admin.site.register(User,CustomUserAdmin)

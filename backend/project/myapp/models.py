@@ -12,36 +12,61 @@ class User(AbstractUser):
     def _str_(self):
         return self.username
 
-
-
+# Supplier Model
 class Supplier(models.Model):
-    name = models.CharField(max_length=255)
+    supplier_id = models.AutoField(primary_key=True)
+    supplier_name = models.CharField(max_length=255)
     contact_info = models.TextField()
 
     def __str__(self):
-        return self.name
+        return self.supplier_name
 
 
-# Product Model
 # Product Model
 class Product(models.Model):
-    product_id = models.AutoField(primary_key=True)  # Automatically generated unique ID
-    name = models.CharField(max_length=255)
+    product_id = models.AutoField(primary_key=True)
+    product_name = models.CharField(max_length=255)
     description = models.TextField()
 
     def __str__(self):
-        return f"{self.product_id} - {self.name}"  # Displaying product_id with name
+        return self.product_name
 
 
-# Supplier Product Model
+# SupplierProduct Model
 class SupplierProduct(models.Model):
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='supplier_products')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='supplier_products')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
     cost = models.DecimalField(max_digits=10, decimal_places=2)
-    inventory_level = models.CharField(max_length=50, blank=True, default='') 
+    quantity = models.PositiveIntegerField(default=0)
+
+    @property
+    def inventory_level(self):
+        if self.quantity == 0:
+            return "Out of Stock"
+        elif self.quantity <= 20:
+            return "Low"
+        elif self.quantity <= 70:
+            return "Medium"
+        else:
+            return "High"
 
     def __str__(self):
-        return f"{self.supplier} - {self.product}"
+        return f"{self.supplier.supplier_name} - {self.product.product_name}"
+
+class Enquiry(models.Model):
+    STATUS_CHOICES = (
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+    )
+
+    user_name = models.CharField(max_length=255)
+    products = models.JSONField()  # Storing products as a list of dictionaries
+    quantity = models.PositiveIntegerField(default=0)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='Pending')
+   
+    def __str__(self):
+        return self.user_name
 
 
 # Inventory Model
