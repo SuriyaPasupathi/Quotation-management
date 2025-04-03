@@ -49,12 +49,13 @@ const Dashboard = () => {
             
             setEnquiries(data.map(enquiry => ({
                 ...enquiry,
-                products: enquiry.products ? JSON.parse(enquiry.products) : []
+                products: enquiry.products || []  // No need for JSON.parse()
             })));
         } catch (error) {
             console.error('Error fetching enquiries:', error);
         }
     };
+    
 
     useEffect(() => {
         fetchEnquiries();
@@ -139,28 +140,29 @@ const Dashboard = () => {
                     </div>
                 )}
 
-                {view === 'enquiry-detail' && selectedEnquiry && (
-                    <div>
-                        <h2 className="text-xl mb-4">Enquiry Details</h2>
-                        <table className="w-full bg-white rounded shadow">
-                            <thead>
-                                <tr>
-                                    <th className="p-2 border">Product</th>
-                                    <th className="p-2 border">Quantity</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {selectedEnquiry.products.map((product, index) => (
-                                    <tr key={index}>
-                                        <td className="p-2 border">{product.name}</td>
-                                        <td className="p-2 border">{product.quantity}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        <button className="bg-gray-500 text-white px-4 py-2 rounded mt-4" onClick={() => setView('list')}>Back</button>
-                    </div>
-                )}
+{view === 'enquiry-detail' && selectedEnquiry && (
+    <div>
+        <h2 className="text-xl mb-4">Enquiry Details</h2>
+        <table className="w-full bg-white rounded shadow">
+            <thead>
+                <tr>
+                    <th className="p-2 border">Product</th>
+                    <th className="p-2 border">Quantity</th>
+                </tr>
+            </thead>
+            <tbody>
+                {selectedEnquiry.products.map((product, index) => (
+                    <tr key={index}>
+                        <td className="p-2 border">{product.name}</td>
+                        <td className="p-2 border">{product.quantity}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+        <button className="bg-gray-500 text-white px-4 py-2 rounded mt-4" onClick={() => setView('list')}>Back</button>
+    </div>
+)}
+
             </div>
         </div>
     );
