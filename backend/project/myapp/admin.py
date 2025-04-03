@@ -44,20 +44,14 @@ class SupplierAdmin(admin.ModelAdmin):
     readonly_fields = ['supplier_id']
     inlines = [SupplierProductInline] 
 
-
-@admin.register(Enquiry)
 class EnquiryAdmin(admin.ModelAdmin):
-    list_display = ('user', 'product', 'quantity', 'status')
-    list_filter = ('status', 'user')
-    search_fields = ('user', 'product')
-    readonly_fields = ('user', 'product', 'quantity')
-    fields = ('user', 'product', 'quantity', 'status')
+    list_display = ('user', 'products', 'quantity', 'status')
+    list_filter = ('status',)
+    search_fields = ('products', 'quantity')
+    readonly_fields = ('user','products', 'quantity')
+    fields = ('products', 'quantity', 'status')
 
-    def get_readonly_fields(self, request, obj=None):
-        if obj:
-            return ('user', 'product', 'quantity')
-        return self.readonly_fields
-   
+admin.site.register(Enquiry, EnquiryAdmin)
 
 
 

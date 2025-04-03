@@ -7,9 +7,10 @@ from django.contrib.auth import authenticate, get_user_model
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 import pandas as pd
+from django.http import JsonResponse, FileResponse
 from .models import Product, Supplier,Enquiry
 from .serializers import EnquirySerializer
-from rest_framework import viewsets, permissions
+import json
 
 
 
@@ -87,13 +88,17 @@ def enquiry_list(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
-@permission_classes([permissions.IsAuthenticated])
-def enquiry_create(request):
-    serializer = EnquirySerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save(user=request.user)  # Associates the enquiry with the authenticated user
-        return Response({'message': 'Enquiry submitted successfully!'}, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+@permission_classes([IsAuthenticated])
+def create_enquiry(request):
+    user = request.user
+    products = json.loads(request.data.get('products', '[]'))
+
+    if not products or not all('name' in p and 'quantity' in p for p in products):
+        return Response({"error": "Invalid product data"}, status=status.HTTP_400_BAD_REQUEST)
+
+    enquiry = Enquiry.objects.create(user=user, products=products)
+    serializer = EnquirySerializer(enquiry)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 @api_view(['PATCH'])
 def approve_enquiry(request, pk):
@@ -125,3 +130,5 @@ class LogoutView(APIView):
             return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+

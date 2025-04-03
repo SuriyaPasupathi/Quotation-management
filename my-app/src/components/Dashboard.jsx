@@ -1,58 +1,56 @@
 import React, { useState, useEffect } from 'react';
 
 const Dashboard = () => {
-    const [userId, setUserId] = useState('');
     const [products, setProducts] = useState([{ name: '', quantity: '' }]);
     const [message, setMessage] = useState('');
     const [enquiries, setEnquiries] = useState([]);
     const [view, setView] = useState('home');
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);  
+    const [selectedEnquiry, setSelectedEnquiry] = useState(null);  
+
+    const token = localStorage.getItem('access_token');  // Fetching the token from local storage
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!userId.trim() || products.some(p => !p.name || !p.quantity)) {
-            alert('Please fill all fields.');
-            return;
-        }
         try {
-            const token = localStorage.getItem('access_token'); // Get token from localStorage
-
             const response = await fetch('http://127.0.0.1:8000/api/enquiry/', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`  // MUST include 'Token' prefix
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    // Your request data
-                })
+                body: JSON.stringify({ products: JSON.stringify(products) })  // Convert products to JSON string
             });
+    
             const data = await response.json();
-            setMessage(data.message);
-            setUserId('');
-            setProducts([{ name: '', quantity: '' }]);
-            setView('home');
+            if (response.ok) {
+                const newEnquiry = { id: data.id, status: data.status, products: products };
+                setEnquiries([...enquiries, newEnquiry]);
+                setMessage(data.message);
+                setProducts([{ name: '', quantity: '' }]);
+                setView('list');
+            } else {
+                console.error('Error creating enquiry:', data);
+            }
         } catch (error) {
-            console.error('Error submitting enquiry!', error);
+            console.error('There was an error!', error);
         }
     };
     
-
+    
+    
     const fetchEnquiries = async () => {
         try {
-            const token = localStorage.getItem('access_token');
             const response = await fetch('http://127.0.0.1:8000/api/enquiry-list/', {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (response.status === 401) {
-                console.error('Unauthorized access! Check your token.');
-            }
             const data = await response.json();
-            setEnquiries(data);
+            
+            setEnquiries(data.map(enquiry => ({
+                ...enquiry,
+                products: enquiry.products ? JSON.parse(enquiry.products) : []
+            })));
         } catch (error) {
             console.error('Error fetching enquiries:', error);
         }
@@ -72,38 +70,41 @@ const Dashboard = () => {
         setProducts([...products, { name: '', quantity: '' }]);
     };
 
+    const handleEnquiryClick = (enquiry) => {
+        setSelectedEnquiry(enquiry);
+        setView('enquiry-detail');
+    };
+
     return (
-        <div className="min-h-screen bg-gray-100 flex">
-            <div className={`w-64 bg-blue-900 text-white shadow-lg p-6 transition-all duration-300 ${isSidebarOpen ? 'block' : 'hidden'} lg:block`}>
-                <button className="lg:hidden mb-4" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-                    {isSidebarOpen ? 'Close Menu' : 'Open Menu'}
-                </button>
-                <h2 className="text-3xl font-bold mb-8">Dashboard</h2>
-                <div className="mb-4 cursor-pointer hover:text-blue-300" onClick={() => setView('home')}>Home</div>
-                <div className="mb-4 cursor-pointer hover:text-blue-300" onClick={() => setView('create')}>Create Enquiry</div>
+        <div className="min-h-screen bg-gray-100 p-8 flex">
+            <div className={`w-64 bg-blue-900 text-white shadow-lg p-6 rounded-lg ${isSidebarOpen ? 'block' : 'hidden'} lg:block`}>
+                <h2 className="text-3xl font-semibold mb-8">Dashboard</h2>
+                <div className="cursor-pointer mb-4 hover:text-blue-300" onClick={() => setView('home')}>Home</div>
+                <div className="cursor-pointer mb-4 hover:text-blue-300" onClick={() => setView('create')}>Create Enquiry</div>
                 <div className="cursor-pointer hover:text-blue-300" onClick={() => setView('list')}>Enquiry List</div>
             </div>
 
-            <div className="flex-1 p-6">
+            <div className="flex-1 ml-6">
                 {view === 'create' && (
                     <div>
-                        <input type="text" value={userId} onChange={(e) => setUserId(e.target.value)} placeholder="User ID" className="border p-2 w-full rounded mb-4" />
-                        <table className="w-full bg-white rounded shadow mb-4">
+                        <table className="w-full bg-white rounded shadow">
                             <thead>
                                 <tr>
-                                    <th className="p-2 border">products</th>
+                                    <th className="p-2 border">Serial No</th>
+                                    <th className="p-2 border">Product</th>
                                     <th className="p-2 border">Quantity</th>
-                                    <th className="p-2 border">Add</th>
+                                    <th className="p-2 border">Add Row</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {products.map((products, index) => (
+                                {products.map((product, index) => (
                                     <tr key={index}>
+                                        <td className="p-2 border text-center">{index + 1}</td>
                                         <td className="p-2 border">
-                                            <input type="text" value={products.name} onChange={(e) => handleProductChange(index, 'name', e.target.value)} className="w-full p-1" />
+                                            <input type="text" value={product.name} onChange={(e) => handleProductChange(index, 'name', e.target.value)} className="w-full p-1" />
                                         </td>
                                         <td className="p-2 border">
-                                            <input type="number" value={products.quantity} onChange={(e) => handleProductChange(index, 'quantity', e.target.value)} className="w-full p-1" />
+                                            <input type="number" value={product.quantity} onChange={(e) => handleProductChange(index, 'quantity', e.target.value)} className="w-full p-1" />
                                         </td>
                                         <td className="p-2 border text-center">
                                             <button className="bg-blue-500 text-white px-2 py-1 rounded" onClick={addProductRow}>+</button>
@@ -112,7 +113,7 @@ const Dashboard = () => {
                                 ))}
                             </tbody>
                         </table>
-                        <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleSubmit}>Submit</button>
+                        <button className="bg-blue-500 text-white px-4 py-2 rounded mt-4" onClick={handleSubmit}>Submit</button>
                     </div>
                 )}
 
@@ -122,25 +123,42 @@ const Dashboard = () => {
                         <table className="w-full bg-white rounded shadow">
                             <thead>
                                 <tr>
-                                    <th className="p-2 border">User ID</th>
-                                    <th className="p-2 border">Products</th>
-                                    <th className="p-2 border">Quantity</th>
+                                    <th className="p-2 border">Serial No</th>
                                     <th className="p-2 border">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {enquiries.map((enquiry) => (
-                                    enquiry.products.map((products, index) => (
-                                        <tr key={`${enquiry.id}-${index}`}>
-                                            <td className="p-2 border">{index === 0 ? enquiry.user_id : ''}</td>
-                                            <td className="p-2 border">{products.name}</td>
-                                            <td className="p-2 border">{products.quantity}</td>
-                                            <td className="p-2 border">{index === 0 ? enquiry.status || 'Pending' : ''}</td>
-                                        </tr>
-                                    ))
+                                {enquiries.map((enquiry, index) => (
+                                    <tr key={enquiry.id} onClick={() => handleEnquiryClick(enquiry)} className="cursor-pointer hover:bg-gray-100">
+                                        <td className="p-2 border text-center">{index + 1}</td>
+                                        <td className="p-2 border">{enquiry.status}</td>
+                                    </tr>
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                )}
+
+                {view === 'enquiry-detail' && selectedEnquiry && (
+                    <div>
+                        <h2 className="text-xl mb-4">Enquiry Details</h2>
+                        <table className="w-full bg-white rounded shadow">
+                            <thead>
+                                <tr>
+                                    <th className="p-2 border">Product</th>
+                                    <th className="p-2 border">Quantity</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {selectedEnquiry.products.map((product, index) => (
+                                    <tr key={index}>
+                                        <td className="p-2 border">{product.name}</td>
+                                        <td className="p-2 border">{product.quantity}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <button className="bg-gray-500 text-white px-4 py-2 rounded mt-4" onClick={() => setView('list')}>Back</button>
                     </div>
                 )}
             </div>
